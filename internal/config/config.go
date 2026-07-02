@@ -1,0 +1,25 @@
+package config
+
+import "github.com/ilyakaznacheev/cleanenv"
+
+type Config struct {
+	ServerPort    int    `env:"SERVER_PORT" env-required:"true"`
+	RoutingConfig string `env:"ROUTING_CONFIG"`
+
+	DBHost     string `env:"DB_HOST" env-required:"true"`
+	DBPort     int    `env:"DB_PORT" env-required:"true"`
+	DBUser     string `env:"DB_USER" env-required:"true"`
+	DBPassword string `env:"DB_PASSWORD" env-required:"true"`
+	DBName     string `env:"DB_NAME" env-required:"true"`
+	DBSSLMode  string `env:"DB_SSLMODE" env-default:"disable"`
+}
+
+func Load() (*Config, error) {
+	var cfg Config
+
+	if err := cleanenv.ReadConfig(".env", &cfg); err != nil {
+		return nil, err
+	}
+
+	return &cfg, nil
+}

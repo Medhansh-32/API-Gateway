@@ -1,0 +1,13 @@
+
+routes:
+  - id: order-service
+    path: /order/**
+    target: http://localhost:8081
+
+  - id: user-service
+    path: /user/**
+    target: http://localhost:8082
+
+  - id: inventory-service
+    path: /inventory/**
+    target: http://localhost:8083
