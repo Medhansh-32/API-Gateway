@@ -3,17 +3,19 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
+
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/medhansh-32/api-gateway/internal/config"
 )
 
 func NewMysqlConnection(cfg *config.Config)(*sql.DB,error) {
 	
-	username := "root"
-	password := "password"
-	host := "localhost"
-	port := "3306"
-	dbName := "mydb"
-
+	username := cfg.DBUser
+	password := cfg.DBPassword
+	host := cfg.DBHost
+	port := strconv.Itoa(cfg.DBPort)
+	dbName := cfg.DBName
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
 		username,

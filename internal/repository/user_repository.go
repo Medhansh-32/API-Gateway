@@ -10,8 +10,8 @@ type UserRepository struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) UserRepository {
-	return UserRepository{db: db}
+func NewUserRepository(db *sql.DB) *UserRepository {
+	return &UserRepository{db: db}
 }
 
 func (userRepository *UserRepository) GetUserByUserId(userId int64) (*models.User, error) {

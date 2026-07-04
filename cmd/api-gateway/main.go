@@ -8,6 +8,9 @@ import (
 	"strconv"
 
 	"github.com/medhansh-32/api-gateway/internal/config"
+	"github.com/medhansh-32/api-gateway/internal/database"
+	"github.com/medhansh-32/api-gateway/internal/repository"
+	"github.com/medhansh-32/api-gateway/internal/service"
 )
 
 func main() {
@@ -24,8 +27,8 @@ func main() {
 	}
 	println("Loaded the API Gateway configuration from " + gatewayCfg.Gateway.Name)
 
-	b, _ := json.MarshalIndent(gatewayCfg, "", "  ")
-	fmt.Println(string(b))
+	// b, _ := json.MarshalIndent(gatewayCfg, "", "  ")
+	// fmt.Println(string(b))
 
 	port := cfg.ServerPort
 	address := "localhost:" + strconv.Itoa(port)
@@ -36,6 +39,25 @@ func main() {
 	}
 
 	serveChan := make(chan struct{})
+	
+	db,dbError := database.NewMysqlConnection(cfg)
+
+	if dbError!=nil{
+		log.Fatal("Error Making Connection with Database : ",dbError.Error())
+	}
+
+	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo)
+	user,err:=userService.GetUserById(1)
+	
+	if err!=nil{
+		println(err.Error())
+	}
+	
+	u, _ := json.MarshalIndent(user, "", "  ")
+	fmt.Println(string(u))
+	
+
 	go func() {
 		err = server.ListenAndServe()
 		if err != nil {
