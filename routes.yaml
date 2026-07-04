@@ -1,13 +1,201 @@
+gateway:
+  name: GoGateway
+  version: "1.0.0"
 
-routes:
+server:
+  host: "0.0.0.0"
+  port: 8080
+  readTimeout: 15s
+  writeTimeout: 15s
+  idleTimeout: 60s
+
+################################################################################
+# Backend Services
+################################################################################
+
+services:
+
   - id: order-service
-    path: /order/**
-    target: http://localhost:8081
+
+    targets:
+      - url: http://localhost:8081
+        weight: 60
+
+      - url: http://localhost:8082
+        weight: 20
+
+      - url: http://localhost:8083
+        weight: 20
+
+    loadBalancer:
+      strategy: weighted-round-robin
+
+    timeout:
+      connect: 3s
+      response: 10s
+
+    retries:
+      attempts: 3
+      backoff: 200ms
+
+    healthCheck:
+      enabled: true
+      path: /health
+      interval: 10s
+      timeout: 2s
+
+    circuitBreaker:
+      enabled: true
+      failureThreshold: 5
+      resetTimeout: 30s
 
   - id: user-service
-    path: /user/**
-    target: http://localhost:8082
+
+    targets:
+      - url: http://localhost:8084
+
+    loadBalancer:
+      strategy: round-robin
 
   - id: inventory-service
+
+    targets:
+      - url: http://localhost:8085
+
+################################################################################
+# Routes
+################################################################################
+
+routes:
+
+  - id: get-orders
+
+    service: order-service
+
+    path: /orders/**
+    methods:
+      - GET
+
+    stripPrefix: false
+
+    auth:
+      enabled: true
+      type: jwt
+
+    middleware:
+      - logging
+      - metrics
+      - tracing
+
+  - id: create-order
+
+    service: order-service
+
+    path: /orders
+    methods:
+      - POST
+
+    auth:
+      enabled: true
+      type: jwt
+
+      roles:
+        - admin
+
+    rateLimit:
+      requests: 100
+      window: 1m
+
+  - id: users
+
+    service: user-service
+
+    path: /users/**
+    methods:
+      - GET
+      - POST
+
+    auth:
+      enabled: true
+      type: jwt
+
+  - id: inventory
+
+    service: inventory-service
+
     path: /inventory/**
-    target: http://localhost:8083
+    methods:
+      - GET
+
+    cache:
+      enabled: true
+      ttl: 5m
+
+################################################################################
+# Reusable Middleware
+################################################################################
+
+middlewares:
+
+  logging:
+    enabled: true
+
+  metrics:
+    enabled: true
+
+  tracing:
+    enabled: true
+
+################################################################################
+# Global Configuration
+################################################################################
+
+cors:
+  enabled: true
+
+  allowOrigins:
+    - "*"
+
+  allowMethods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+
+  allowHeaders:
+    - Authorization
+    - Content-Type
+
+headers:
+
+  request:
+    add:
+      X-Gateway: GoGateway
+
+  response:
+    remove:
+      - Server
+
+jwt:
+  issuer: GoGateway
+  audience: api-clients
+  secret: my-secret-key
+
+observability:
+
+  metrics:
+    enabled: true
+    endpoint: /metrics
+
+  tracing:
+    enabled: true
+
+compression:
+  enabled: true
+
+requestID:
+  enabled: true
+
+accessLog:
+  enabled: true

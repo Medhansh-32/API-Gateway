@@ -1,6 +1,9 @@
 package config
 
-import "github.com/ilyakaznacheev/cleanenv"
+import (
+	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/medhansh-32/api-gateway/internal/models"
+)
 
 type Config struct {
 	ServerPort    int    `env:"SERVER_PORT" env-required:"true"`
@@ -22,4 +25,14 @@ func Load() (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+func LoadGateWayConfig(path string) (*models.GatewayConfig, error){
+	var gatewayConfig models.GatewayConfig
+	 err := cleanenv.ReadConfig(path,&gatewayConfig);
+	if err!=nil{
+		return nil,err
+	}
+
+	return &gatewayConfig,nil
 }
