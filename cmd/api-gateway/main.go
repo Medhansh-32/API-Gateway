@@ -10,7 +10,6 @@ import (
 	"github.com/medhansh-32/api-gateway/internal/config"
 	"github.com/medhansh-32/api-gateway/internal/database"
 	"github.com/medhansh-32/api-gateway/internal/handlers"
-	"github.com/medhansh-32/api-gateway/internal/middleware"
 	"github.com/medhansh-32/api-gateway/internal/repository"
 	"github.com/medhansh-32/api-gateway/internal/service"
 )
