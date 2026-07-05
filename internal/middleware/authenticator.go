@@ -1,12 +1,22 @@
 package middleware
 
-import "net/http"
+import (
+	"net/http"
 
-func Authentication(next http.Handler) http.Handler {
+	"github.com/medhansh-32/api-gateway/internal/service"
+)
+
+
+type AuthMiddleware struct {
+    authService *service.AuthenticationService
+}
+
+func (autheMiddleware *AuthMiddleware) Authentication(next http.Handler) http.Handler {
+	
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		//perfrom Authentiation logic and add int he context the data 
+		
 		
 		next.ServeHTTP(w,r)
 	})

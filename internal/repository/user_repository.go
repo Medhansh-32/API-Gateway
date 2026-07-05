@@ -49,3 +49,39 @@ func (userRepository *UserRepository) GetUserByUserId(userId int64) (*models.Use
 
 	return &user, nil
 }
+
+func (userRepository *UserRepository) GetUserByUserName(userName string) (*models.User, error) {
+	
+	query := `
+		SELECT
+			id,
+			username,
+			email,
+			password_hash,
+			role,
+			is_active,
+			created_at,
+			updated_at
+		FROM users
+		WHERE username = ?;
+		`
+
+	var user models.User
+
+	err := userRepository.db.QueryRow(query, userName).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.PasswordHash,
+		&user.Role,
+		&user.IsActive,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}

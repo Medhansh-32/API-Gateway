@@ -1,14 +1,16 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	// "encoding/json"
+	// "fmt"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/medhansh-32/api-gateway/internal/config"
 	"github.com/medhansh-32/api-gateway/internal/database"
+	"github.com/medhansh-32/api-gateway/internal/handlers"
+	"github.com/medhansh-32/api-gateway/internal/middleware"
 	"github.com/medhansh-32/api-gateway/internal/repository"
 	"github.com/medhansh-32/api-gateway/internal/service"
 )
@@ -50,14 +52,19 @@ func main() {
 
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
-	user,err:=userService.GetUserById(1)
+	// user,err:=userService.GetUserById(1)
+	jwtService:= service.NewJWTService(cfg.JWTSecret)
+	authService:= service.NewAuthService(userService,jwtService)
+	proxyService:= service.NewProxyService()
+	gateWayHandler := handlers.NewGateWayHandler(proxyService,*authService)
+	gateWayHandler.RegisteRoutes(router)
 	
 	if err!=nil{
 		println(err.Error())
 	}
 	
-	u, _ := json.MarshalIndent(user, "", "  ")
-	fmt.Println(string(u))
+	// u, _ := json.MarshalIndent(user, "", "  ")
+	// fmt.Println(string(u))
 	
 
 	go func() {

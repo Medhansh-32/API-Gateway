@@ -7,6 +7,7 @@ import (
 
 type UserService interface {
 	GetUserById(userId int64) (*models.User, error)
+	GetUserByUserName(userName string) (*models.User, error)
 }
 
 type UserServiceImpl struct {
@@ -19,6 +20,14 @@ func NewUserService(userRepository *repository.UserRepository) (UserService){
 
 func (userServiceImpl *UserServiceImpl) GetUserById(userId int64) (*models.User, error) {
 	user, err := userServiceImpl.UserRepository.GetUserByUserId(userId)
+	if err != nil {
+		return nil, err
+	}
+	return user,nil
+}
+
+func (userServiceImpl *UserServiceImpl) GetUserByUserName(userName string) (*models.User, error) {
+	user, err := userServiceImpl.UserRepository.GetUserByUserName(userName)
 	if err != nil {
 		return nil, err
 	}
