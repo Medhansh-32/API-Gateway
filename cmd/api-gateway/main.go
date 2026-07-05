@@ -38,6 +38,8 @@ func main() {
 		Handler: router,
 	}
 
+	
+
 	serveChan := make(chan struct{})
 	
 	db,dbError := database.NewMysqlConnection(cfg)
@@ -64,7 +66,7 @@ func main() {
 			log.Fatal("Error Starting Server : ", err.Error())
 		}
 	}()
-	log.Print("Server Started Port :", 8080)
+	log.Print("API GateWay Started Port :", 8080)
 
 	<-serveChan
 
