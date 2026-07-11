@@ -26,14 +26,16 @@ func NewAuthMiddleWare(authService *service.AuthenticationService, gateWayConfig
 func (autheMiddleware *AuthMiddleware) Authentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Authentication Passed....")
-		rWithContext , err := autheMiddleware.authenticateRequest(r, autheMiddleware.gateWayConfig)
+
+		rWithContext, err := autheMiddleware.authenticateRequest(r, autheMiddleware.gateWayConfig)
 
 		if err != nil {
+			w.Header().Set("Content-type","application/json")
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
 			return
 		}
+		log.Println("Authentication Passed....")
 		next.ServeHTTP(w, rWithContext)
 	})
 
@@ -48,7 +50,7 @@ func (a AuthMiddleware) authenticateRequest(r *http.Request, cfg *config.ConfigM
 	authEnbaled := checkAuthEnabledForURL(url, cfg.Get())
 
 	if authEnbaled == false {
-		return nil, nil
+		return r, nil
 	}
 
 	bearerToken := r.Header.Get(utils.AUTHORIZE_TOKEN)
@@ -58,19 +60,20 @@ func (a AuthMiddleware) authenticateRequest(r *http.Request, cfg *config.ConfigM
 		return nil, errors.New("Auth Token Not Found")
 	}
 
-	token := strings.TrimPrefix(bearerToken,"bearer ")
+	token := strings.TrimPrefix(bearerToken, utils.BEARER)
 
-	log.Println("Authenticating Request for URL : ", url, " token : ", token)
+	log.Println(token)
 
+	log.Println("Authenticating Request for URL : ", url, " token :", token)
 
-	claims, err:= a.authService.ValidateToken(token)
+	claims, err := a.authService.ValidateToken(token)
 
-	if err == nil{
+	if err == nil {
 		context := context.WithValue(r.Context(), utils.USER_INFO, claims)
-		log.Println("User Authenticated user-id : ",claims.ID)
+		log.Println("User Authenticated user-id : ", claims.ID)
 		return r.WithContext(context), nil
 	}
-
+	log.Println(err)
 	return nil, err
 
 }
@@ -79,22 +82,23 @@ func checkAuthEnabledForURL(url *url.URL, cfg *models.GatewayConfig) bool {
 	routes := cfg.Routes
 
 	for _, route := range routes {
-	
-		if matchURL(url,route.Path){
-		return route.Auth.Enabled
-	  }
-	
+
+		if matchURL(url, route.Path) {
+			log.Println("Route Matched : ", route)
+			return route.Auth.Enabled
+		}
+
 	}
 
 	return false
 
 }
 
-func matchURL(url *url.URL, pathPattern string) (bool) {
+func matchURL(url *url.URL, pathPattern string) bool {
 
-	path := strings.TrimSuffix(pathPattern,"/**")
+	path := strings.TrimSuffix(pathPattern, "/**")
 
-	if path == url.Path{
+	if path == url.Path {
 		return true
 	}
 

@@ -54,7 +54,7 @@ func (J JWTServiceImpl) ValidateToken(tokenString string) (*Claims, error) {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return J.jwtSecret, nil
+		return []byte(J.jwtSecret), nil
 	})
 
 	if err != nil {

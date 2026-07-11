@@ -54,14 +54,14 @@ func main() {
 
 	auth := middleware.NewAuthMiddleWare(authService,gatewayCfgManager)
 	router := http.DefaultServeMux
-	middlewareROuter := middleware.Logger(auth.Authentication(middleware.RateLimiter(router)))
+	middlewareRouter := middleware.Logger(auth.Authentication(middleware.RateLimiter(router)))
 
 	port := cfg.ServerPort
 	address := "localhost:" + strconv.Itoa(port)
 
 	server := http.Server{
 		Addr:    address,
-		Handler: middlewareROuter,
+		Handler: middlewareRouter,
 	}
 
 	gateWayHandler.RegisteRoutes(router)
