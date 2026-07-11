@@ -59,3 +59,7 @@ func (authenticationService AuthenticationService) Login(loginRequest requests.L
    },nil
 
 }
+
+func (authenticationService AuthenticationService) ValidateToken(token string) (*Claims,error){
+	return authenticationService.jwtService.ValidateToken(token) 
+}

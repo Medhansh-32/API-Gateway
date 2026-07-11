@@ -1,6 +1,9 @@
 package middleware
 
-import "net/http"
+import (
+	"log"
+	"net/http"
+)
 
 func RateLimiter(next http.Handler) http.Handler {
 
@@ -8,6 +11,7 @@ func RateLimiter(next http.Handler) http.Handler {
 
 		//perfrom RateLimit logic and add int he context the data 
 
+		log.Println("Rate Limiter Passed....")
 		next.ServeHTTP(w,r)
 	})
 

@@ -1,10 +1,14 @@
 package service
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/medhansh-32/api-gateway/internal/models"
+)
 
 
 type ProxyService interface{
-	FindTargetRouteForRequest(request *http.Request) (string,error)
+	FindTargetRouteForRequest(request *http.Request) (models.TargetRoute,error)
 }
 
 type ProxyServiceImpl struct{
@@ -15,6 +19,6 @@ func NewProxyService() (ProxyService){
 	return &ProxyServiceImpl{}
 }
 
-func (proxyServiceImpl *ProxyServiceImpl) FindTargetRouteForRequest(request *http.Request) (string,error){
-	return "localhost:8081",nil
+func (proxyServiceImpl *ProxyServiceImpl) FindTargetRouteForRequest(request *http.Request) (models.TargetRoute,error){
+	return models.TargetRoute{Scheme: "http", Host: "paperpalprod.onrender.com", Path: "/health" },nil
 }

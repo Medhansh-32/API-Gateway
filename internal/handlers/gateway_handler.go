@@ -29,19 +29,23 @@ func NewGateWayHandler(proxyService service.ProxyService,
 
 func (gateWayHandler *GateWayHandler) Redirect(w http.ResponseWriter, r *http.Request) {
 
-	target, err := gateWayHandler.proxyService.FindTargetRouteForRequest(r)
+    targetRoute, err := gateWayHandler.proxyService.FindTargetRouteForRequest(r)
+    if err != nil {
+        w.WriteHeader(http.StatusBadRequest)
+        w.Write([]byte("Invalid Request"))
+        return
+    }
 
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid Request"))
-		return
-	}
+    targetURL := &url.URL{Scheme: "https", Host: targetRoute.Host}
 
-	targetURL := url.URL{Scheme: "http",Host: target}
-
-	reverseProxy := httputil.NewSingleHostReverseProxy(&targetURL)
-
-	reverseProxy.ServeHTTP(w,r)
+    reverseProxy := &httputil.ReverseProxy{
+        Rewrite: func(pr *httputil.ProxyRequest) {
+            pr.SetURL(targetURL)  
+            pr.Out.URL.Path = targetRoute.Path
+		},
+    }
+	log.Println("Calling Target URL ")
+    reverseProxy.ServeHTTP(w, r)
 }
 
 

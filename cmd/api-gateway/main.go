@@ -10,6 +10,7 @@ import (
 	"github.com/medhansh-32/api-gateway/internal/config"
 	"github.com/medhansh-32/api-gateway/internal/database"
 	"github.com/medhansh-32/api-gateway/internal/handlers"
+	"github.com/medhansh-32/api-gateway/internal/middleware"
 	"github.com/medhansh-32/api-gateway/internal/repository"
 	"github.com/medhansh-32/api-gateway/internal/service"
 )
@@ -30,15 +31,6 @@ func main() {
 
 	// b, _ := json.MarshalIndent(gatewayCfg, "", "  ")
 	// fmt.Println(string(b))
-
-	port := cfg.ServerPort
-	address := "localhost:" + strconv.Itoa(port)
-	router := http.DefaultServeMux
-	server := http.Server{
-		Addr:    address,
-		Handler: router,
-	}
-
 	
 
 	serveChan := make(chan struct{})
@@ -56,6 +48,22 @@ func main() {
 	authService:= service.NewAuthService(userService,jwtService)
 	proxyService:= service.NewProxyService()
 	gateWayHandler := handlers.NewGateWayHandler(proxyService,*authService)
+	gatewayCfgManager := &config.ConfigManager{}
+	
+	gatewayCfgManager.Update(gatewayCfg)
+
+	auth := middleware.NewAuthMiddleWare(authService,gatewayCfgManager)
+	router := http.DefaultServeMux
+	middlewareROuter := middleware.Logger(auth.Authentication(middleware.RateLimiter(router)))
+
+	port := cfg.ServerPort
+	address := "localhost:" + strconv.Itoa(port)
+
+	server := http.Server{
+		Addr:    address,
+		Handler: middlewareROuter,
+	}
+
 	gateWayHandler.RegisteRoutes(router)
 	
 	if err!=nil{

@@ -72,7 +72,7 @@ routes:
 
     service: order-service
 
-    path: /orders/**
+    path: /health/**
     methods:
       - GET
 
