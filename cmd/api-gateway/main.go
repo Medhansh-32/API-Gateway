@@ -53,8 +53,10 @@ func main() {
 	gatewayCfgManager.Update(gatewayCfg)
 
 	auth := middleware.NewAuthMiddleWare(authService,gatewayCfgManager)
+	rateLimit := middleware.NewRateLimitingMiddleware(gatewayCfgManager)
+	
 	router := http.DefaultServeMux
-	middlewareRouter := middleware.Logger(auth.Authentication(middleware.RateLimiter(router)))
+	middlewareRouter := middleware.Logger(auth.Authentication(rateLimit.RateLimitCheck(router)))
 
 	port := cfg.ServerPort
 	address := "localhost:" + strconv.Itoa(port)

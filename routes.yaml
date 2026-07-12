@@ -13,6 +13,7 @@ server:
 # Backend Services
 ################################################################################
 
+
 services:
 
   - id: order-service
@@ -49,6 +50,8 @@ services:
       failureThreshold: 5
       resetTimeout: 30s
 
+    rateLimit: true  
+
   - id: user-service
 
     targets:
@@ -78,6 +81,8 @@ routes:
 
     stripPrefix: false
 
+    rateLimit: true
+
     auth:
       enabled: true
       type: jwt
@@ -102,9 +107,7 @@ routes:
       roles:
         - admin
 
-    rateLimit:
-      requests: 100
-      window: 1m
+    rateLimit: true
 
   - id: users
 
@@ -176,6 +179,10 @@ headers:
   response:
     remove:
       - Server
+
+rateLimit:
+  requests: 10
+  window: 1m
 
 jwt:
   issuer: GoGateway

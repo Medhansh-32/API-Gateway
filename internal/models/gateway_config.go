@@ -36,6 +36,7 @@ type GatewayConfig struct {
 	Middlewares   map[string]Middleware `yaml:"middlewares"`
 	CORS          CORSConfig            `yaml:"cors"`
 	Headers       HeadersConfig         `yaml:"headers"`
+	RateLimit	  RateLimit	            `yaml:"rateLimit"`
 	JWT           JWTConfig             `yaml:"jwt"`
 	Observability ObservabilityConfig   `yaml:"observability"`
 	Compression   ToggleConfig          `yaml:"compression"`
@@ -118,7 +119,7 @@ type RouteConfig struct {
 	StripPrefix  bool          `yaml:"stripPrefix"`
 	Auth         AuthConfig    `yaml:"auth"`
 	Middleware   []string      `yaml:"middleware"`
-	RateLimit    *RateLimit    `yaml:"rateLimit,omitempty"`
+	RateLimit    bool    `yaml:"rateLimit,omitempty"`
 	Cache        *CacheConfig  `yaml:"cache,omitempty"`
 }
 

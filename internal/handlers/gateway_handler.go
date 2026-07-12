@@ -31,6 +31,7 @@ func (gateWayHandler *GateWayHandler) Redirect(w http.ResponseWriter, r *http.Re
 
     targetRoute, err := gateWayHandler.proxyService.FindTargetRouteForRequest(r)
     if err != nil {
+		log.Println(err.Error())
         w.WriteHeader(http.StatusBadRequest)
         w.Write([]byte("Invalid Request"))
         return
