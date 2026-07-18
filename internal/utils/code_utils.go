@@ -2,4 +2,4 @@ package utils
 
 const AUTHORIZE_TOKEN string = "Authorization"
 const USER_INFO string = "user-info"
-const BEARER string = "bearer "
+const BEARER string = "Bearer "

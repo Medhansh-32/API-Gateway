@@ -9,6 +9,7 @@ import (
 
 	"github.com/medhansh-32/api-gateway/internal/models/requests"
 	"github.com/medhansh-32/api-gateway/internal/service"
+	"github.com/medhansh-32/api-gateway/internal/utils"
 )
 
 
@@ -20,6 +21,7 @@ type GateWayHandler struct{
 func (gateWayHandler *GateWayHandler) RegisteRoutes(router *http.ServeMux) {
 	router.HandleFunc("/", gateWayHandler.Redirect)
 	router.HandleFunc("/login", gateWayHandler.Login)
+	router.HandleFunc("/test", gateWayHandler.Test)
 }
 
 func NewGateWayHandler(proxyService service.ProxyService,
@@ -68,4 +70,23 @@ func (gateWayHandler *GateWayHandler) Login(w http.ResponseWriter, r *http.Reque
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(loginResponse)
+}
+
+func (gateWayHandler *GateWayHandler) Test(w http.ResponseWriter, r *http.Request) {
+
+	
+	userInfo,ok := r.Context().Value(utils.USER_INFO).(*service.Claims)
+
+	if !ok{
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`{"error":"Invalid User Context"}`))
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(w).Encode(userInfo)
+
+
 }

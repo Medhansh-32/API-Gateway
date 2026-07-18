@@ -78,6 +78,7 @@ type ServiceConfig struct {
 type TargetConfig struct {
 	URL    string `yaml:"url"`
 	Weight int    `yaml:"weight"`
+	CurrentWeight int
 }
 
 type LoadBalancerConfig struct {

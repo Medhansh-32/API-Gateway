@@ -2,14 +2,17 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/medhansh-32/api-gateway/internal/config"
 	"github.com/medhansh-32/api-gateway/internal/models"
+	"github.com/medhansh-32/api-gateway/internal/models/response"
 	"github.com/medhansh-32/api-gateway/internal/service"
 	"github.com/medhansh-32/api-gateway/internal/utils"
 )
@@ -30,9 +33,10 @@ func (autheMiddleware *AuthMiddleware) Authentication(next http.Handler) http.Ha
 		rWithContext, err := autheMiddleware.authenticateRequest(r, autheMiddleware.gateWayConfig)
 
 		if err != nil {
-			w.Header().Set("Content-type","application/json")
+			w.Header().Set("Content-type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
+			response:=response.ErrorResponse{Code: http.StatusBadRequest,Message: err.Error()}
+			json.NewEncoder(w).Encode(response)
 			return
 		}
 		log.Println("Authentication Passed....")
@@ -47,9 +51,9 @@ func (a AuthMiddleware) authenticateRequest(r *http.Request, cfg *config.ConfigM
 
 	log.Println("Authenticating Request for URL : {}", url, " token ")
 
-	authEnbaled := checkAuthEnabledForURL(url, cfg.Get())
+	routeConfig := getRouteConfigForURL(url, cfg.Get())
 
-	if authEnbaled == false {
+	if routeConfig == nil || routeConfig.Auth.Enabled == false {
 		return r, nil
 	}
 
@@ -68,6 +72,14 @@ func (a AuthMiddleware) authenticateRequest(r *http.Request, cfg *config.ConfigM
 
 	claims, err := a.authService.ValidateToken(token)
 
+	if routeConfig.Auth.Type == "Authorize" {
+		contains := slices.Contains(routeConfig.Auth.Roles, claims.Role)
+
+		if !contains {
+			return nil, errors.New("Unathourized User")
+		}
+	}
+
 	if err == nil {
 		context := context.WithValue(r.Context(), utils.USER_INFO, claims)
 		log.Println("User Authenticated user-id : ", claims.ID)
@@ -78,19 +90,19 @@ func (a AuthMiddleware) authenticateRequest(r *http.Request, cfg *config.ConfigM
 
 }
 
-func checkAuthEnabledForURL(url *url.URL, cfg *models.GatewayConfig) bool {
+func getRouteConfigForURL(url *url.URL, cfg *models.GatewayConfig) *models.RouteConfig {
 	routes := cfg.Routes
 
 	for _, route := range routes {
 
 		if matchURL(url, route.Path) {
 			log.Println("Route Matched : ", route)
-			return route.Auth.Enabled
+			return &route
 		}
 
 	}
 
-	return false
+	return nil
 
 }
 

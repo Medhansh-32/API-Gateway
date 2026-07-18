@@ -52,7 +52,7 @@ func Logger(next http.Handler) http.Handler {
 				pretty,
 			)
 		} else {
-			// Not valid JSON, print as plain text
+	
 			log.Printf(
 				"Method=%s Path=%s Status=%d Response=%s",
 				r.Method,

@@ -11,8 +11,10 @@ import (
 )
 
 type Claims struct {
-	UserID int64 `json:"user_id"`
+	UserID int64 `json:"userId"`
 	Role   string `json:"role"`
+	Name   string `json:"username"`
+	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }
 
@@ -33,6 +35,8 @@ func (J JWTServiceImpl) GenerateToken(user *models.User) (string, error) {
 	claims := Claims{
 		UserID: user.ID,
 		Role:   user.Role,
+		Name: 	user.Username,
+		Email:  user.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   strconv.FormatInt(user.ID,10),
 			Issuer:    "API-Gateway",

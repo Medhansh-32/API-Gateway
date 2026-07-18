@@ -96,14 +96,13 @@ routes:
 
     service: order-service
 
-    path: /orders
+    path: /test
     methods:
-      - POST
+      - GET
 
     auth:
       enabled: true
-      type: jwt
-
+      type: "Authorize"
       roles:
         - admin
 
