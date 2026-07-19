@@ -19,13 +19,13 @@ services:
   - id: order-service
 
     targets:
-      - url: http://localhost:8081
+      - url: paperpalprod.onrender.com
         weight: 60
 
-      - url: http://localhost:8082
+      - url: paperpalprod.onrender.com
         weight: 20
 
-      - url: http://localhost:8083
+      - url: testcase-nbgy.onrender.com
         weight: 20
 
     loadBalancer:
@@ -96,7 +96,7 @@ routes:
 
     service: order-service
 
-    path: /test
+    path: /order/**
     methods:
       - GET
 

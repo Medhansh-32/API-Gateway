@@ -41,16 +41,17 @@ func main() {
 		log.Fatal("Error Making Connection with Database : ",dbError.Error())
 	}
 
+	gatewayCfgManager := &config.ConfigManager{}
+	
+	gatewayCfgManager.Update(gatewayCfg)
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
 	// user,err:=userService.GetUserById(1)
 	jwtService:= service.NewJWTService(cfg.JWTSecret)
 	authService:= service.NewAuthService(userService,jwtService)
-	proxyService:= service.NewProxyService()
+	proxyService:= service.NewProxyService(gatewayCfgManager)
 	gateWayHandler := handlers.NewGateWayHandler(proxyService,*authService)
-	gatewayCfgManager := &config.ConfigManager{}
-	
-	gatewayCfgManager.Update(gatewayCfg)
+
 
 	auth := middleware.NewAuthMiddleWare(authService,gatewayCfgManager)
 	rateLimit := middleware.NewRateLimitingMiddleware(gatewayCfgManager)

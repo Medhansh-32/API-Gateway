@@ -35,7 +35,7 @@ func (autheMiddleware *AuthMiddleware) Authentication(next http.Handler) http.Ha
 		if err != nil {
 			w.Header().Set("Content-type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			response:=response.ErrorResponse{Code: http.StatusBadRequest,Message: err.Error()}
+			response := response.ErrorResponse{Code: http.StatusBadRequest, Message: err.Error()}
 			json.NewEncoder(w).Encode(response)
 			return
 		}
@@ -72,6 +72,12 @@ func (a AuthMiddleware) authenticateRequest(r *http.Request, cfg *config.ConfigM
 
 	claims, err := a.authService.ValidateToken(token)
 
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("Claims: %+v\n", claims)
+
 	if routeConfig.Auth.Type == "Authorize" {
 		contains := slices.Contains(routeConfig.Auth.Roles, claims.Role)
 
@@ -80,13 +86,9 @@ func (a AuthMiddleware) authenticateRequest(r *http.Request, cfg *config.ConfigM
 		}
 	}
 
-	if err == nil {
-		context := context.WithValue(r.Context(), utils.USER_INFO, claims)
-		log.Println("User Authenticated user-id : ", claims.ID)
-		return r.WithContext(context), nil
-	}
-	log.Println(err)
-	return nil, err
+	context := context.WithValue(r.Context(), utils.USER_INFO, claims)
+	log.Println("User Authenticated user-id : ", claims.ID)
+	return r.WithContext(context), nil
 
 }
 
@@ -110,9 +112,21 @@ func matchURL(url *url.URL, pathPattern string) bool {
 
 	path := strings.TrimSuffix(pathPattern, "/**")
 
-	if path == url.Path {
+	if path == getFirstSegment(url.Path) {
 		return true
 	}
 
 	return false
+}
+
+func getFirstSegment(path string) string {
+	path = strings.TrimPrefix(path, "/")
+
+	parts := strings.SplitN(path, "/", 2)
+
+	if len(parts) == 1 {
+		return "/"
+	}
+	log.Println("Orignal Path : " + "/" + parts[0])
+	return "/" + parts[0]
 }

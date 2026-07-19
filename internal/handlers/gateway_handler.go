@@ -39,7 +39,7 @@ func (gateWayHandler *GateWayHandler) Redirect(w http.ResponseWriter, r *http.Re
         return
     }
 
-    targetURL := &url.URL{Scheme: "https", Host: targetRoute.Host}
+    targetURL := &url.URL{Scheme: "https", Host: targetRoute.Host, Path: targetRoute.Path, RawQuery: r.URL.RawQuery}
 
     reverseProxy := &httputil.ReverseProxy{
         Rewrite: func(pr *httputil.ProxyRequest) {
@@ -47,7 +47,7 @@ func (gateWayHandler *GateWayHandler) Redirect(w http.ResponseWriter, r *http.Re
             pr.Out.URL.Path = targetRoute.Path
 		},
     }
-	log.Println("Calling Target URL ")
+	log.Println("Calling Target URL :"+targetURL.Scheme+"://"+targetURL.Host+targetURL.Path+r.URL.RawQuery)
     reverseProxy.ServeHTTP(w, r)
 }
 

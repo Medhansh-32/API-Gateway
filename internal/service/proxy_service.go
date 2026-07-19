@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -16,18 +17,17 @@ type ProxyService interface{
 
 type ProxyServiceImpl struct{
 	ConfigManager *config.ConfigManager
+	WrrManager    *WRRManager
 }
 
 func NewProxyService(Cfg *config.ConfigManager) (ProxyService){
-	return &ProxyServiceImpl{ConfigManager: Cfg}
+	return &ProxyServiceImpl{ConfigManager: Cfg,
+		WrrManager: &WRRManager{services: make(map[string]*wrrState)},
+	}
 }
+
 
 func (proxyServiceImpl *ProxyServiceImpl) FindTargetRouteForRequest(request *http.Request) (*models.TargetRoute,error){
-	return &models.TargetRoute{Scheme: "http", Host: "paperpalprod.onrender.com", Path: "/health" },nil
-}
-
-
-func (proxyServiceImpl *ProxyServiceImpl) FindTargetRouteForRequest2(request *http.Request) (*models.TargetRoute,error){
 
 	
 	route,err := CheckRouteAndPath(proxyServiceImpl.ConfigManager.Get(),request.URL.Path);
@@ -37,22 +37,29 @@ func (proxyServiceImpl *ProxyServiceImpl) FindTargetRouteForRequest2(request *ht
 	}
 
 
-	_ , err = getServiceForRoute(proxyServiceImpl.ConfigManager.Get(),route.Path)
+	service , err := getServiceForRoute(proxyServiceImpl.ConfigManager.Get(),route.Path)
 
 	if err != nil{
 		return nil,err
 	}
 
+	target, available :=proxyServiceImpl.WrrManager.GetTarget(service.ID,service.Targets) 
 
-	return &models.TargetRoute{Scheme: "http", Host: "paperpalprod.onrender.com", Path: "/health" },nil
+	if !available{
+		return nil,errors.New("No Target Available for path : "+request.URL.Path)
+	}
+
+	log.Println("Target Route Found for Service : "+ route.Service + " target : "+target.URL+" Weight : ",target.Weight)
+
+	return &models.TargetRoute{Host: target.URL, Path: stripFirstSegment(request.URL.Path) },nil
 }
 
 func CheckRouteAndPath(cfg *models.GatewayConfig, path string) (*models.RouteConfig, error){
 	for _ , route := range cfg.Routes{
 		
-		a := strings.TrimSuffix(path,"/**")
+		baseRoute := strings.TrimSuffix(route.Path,"/**")
 
-		if path == a {
+		if getFirstSegment(path) == baseRoute {
 			return &route,nil
 		}
 	} 
@@ -79,4 +86,28 @@ func getServiceForRoute(cfg *models.GatewayConfig, path string) (*models.Service
 	}
 
 	return nil,errors.New("No Targets found for URL "+path)
+}
+
+func stripFirstSegment(path string) string {
+	path = strings.TrimPrefix(path, "/")
+
+	parts := strings.SplitN(path, "/", 2)
+
+	if len(parts) == 1 {
+		return "/"
+	}
+
+	return "/" + parts[1]
+}
+
+func getFirstSegment(path string) string {
+	path = strings.TrimPrefix(path, "/")
+
+	parts := strings.SplitN(path, "/", 2)
+
+	if len(parts) == 1 {
+		return "/"
+	}
+	log.Println("Orignal Path : " + "/" + parts[0])
+	return "/" + parts[0]
 }
