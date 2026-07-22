@@ -43,11 +43,14 @@ func (gateWayHandler *GateWayHandler) Redirect(w http.ResponseWriter, r *http.Re
 
     reverseProxy := &httputil.ReverseProxy{
         Rewrite: func(pr *httputil.ProxyRequest) {
-            pr.SetURL(targetURL)  
-            pr.Out.URL.Path = targetRoute.Path
+			pr.SetURL(targetURL)
+            pr.Out.URL.Scheme = targetURL.Scheme
+			pr.Out.URL.Host = targetRoute.Host 
+            pr.Out.URL.Path = targetURL.Path
+			pr.Out.URL.RawQuery=targetURL.RawQuery
 		},
     }
-	log.Println("Calling Target URL :"+targetURL.Scheme+"://"+targetURL.Host+targetURL.Path+r.URL.RawQuery)
+	log.Println(targetURL)
     reverseProxy.ServeHTTP(w, r)
 }
 

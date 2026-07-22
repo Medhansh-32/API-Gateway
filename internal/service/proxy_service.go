@@ -20,9 +20,11 @@ type ProxyServiceImpl struct{
 	WrrManager    *WRRManager
 }
 
-func NewProxyService(Cfg *config.ConfigManager) (ProxyService){
+func NewProxyService(Cfg *config.ConfigManager, healthService *HealthService) (ProxyService){
 	return &ProxyServiceImpl{ConfigManager: Cfg,
-		WrrManager: &WRRManager{services: make(map[string]*wrrState)},
+		WrrManager: &WRRManager{services: make(map[string]*wrrState),
+		HealthService: healthService,
+		},
 	}
 }
 
@@ -43,7 +45,7 @@ func (proxyServiceImpl *ProxyServiceImpl) FindTargetRouteForRequest(request *htt
 		return nil,err
 	}
 
-	target, available :=proxyServiceImpl.WrrManager.GetTarget(service.ID,service.Targets) 
+	target, available := proxyServiceImpl.WrrManager.GetTarget(service.ID,service.Targets) 
 
 	if !available{
 		return nil,errors.New("No Target Available for path : "+request.URL.Path)

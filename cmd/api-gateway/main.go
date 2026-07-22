@@ -12,6 +12,7 @@ import (
 	"github.com/medhansh-32/api-gateway/internal/handlers"
 	"github.com/medhansh-32/api-gateway/internal/middleware"
 	"github.com/medhansh-32/api-gateway/internal/repository"
+	"github.com/medhansh-32/api-gateway/internal/schedular"
 	"github.com/medhansh-32/api-gateway/internal/service"
 )
 
@@ -44,12 +45,15 @@ func main() {
 	gatewayCfgManager := &config.ConfigManager{}
 	
 	gatewayCfgManager.Update(gatewayCfg)
+	
+	healthService := service.NewHealthService(gatewayCfgManager)
+
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
 	// user,err:=userService.GetUserById(1)
 	jwtService:= service.NewJWTService(cfg.JWTSecret)
 	authService:= service.NewAuthService(userService,jwtService)
-	proxyService:= service.NewProxyService(gatewayCfgManager)
+	proxyService:= service.NewProxyService(gatewayCfgManager,healthService)
 	gateWayHandler := handlers.NewGateWayHandler(proxyService,*authService)
 
 
@@ -73,6 +77,9 @@ func main() {
 		println(err.Error())
 	}
 	
+	healthCheckSchedular := schedular.NewHealthCheckSchedular(healthService)
+	go healthCheckSchedular.InitHealthCheckSchedular()
+
 	// u, _ := json.MarshalIndent(user, "", "  ")
 	// fmt.Println(string(u))
 	

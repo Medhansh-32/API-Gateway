@@ -59,7 +59,8 @@ func (s *wrrState) getTarget(serviceID string, targets []models.TargetConfig) (m
 
 type WRRManager struct {
 	mu       sync.Mutex
-	services map[string]*wrrState
+	services map[string]*wrrState 
+	HealthService *HealthService
 }
 
 func NewWRRManager() *WRRManager {
@@ -76,7 +77,15 @@ func (m *WRRManager) GetTarget(serviceID string, targets []models.TargetConfig) 
 	}
 	m.mu.Unlock()
 
-	target, ok := state.getTarget(serviceID, targets)
+	targetCopy := make([]models.TargetConfig,0)
+
+	for _,target := range targets{
+		if m.HealthService.GetServiceHealth(target.URL){
+			targetCopy = append(targetCopy, target)
+		}
+	}
+
+	target, ok := state.getTarget(serviceID, targetCopy)
 	if !ok {
 		log.Printf("[WRR] service=%s GetTarget failed, no target returned", serviceID)
 	} else {

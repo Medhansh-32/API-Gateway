@@ -97,8 +97,6 @@ type RetryConfig struct {
 type HealthCheckConfig struct {
 	Enabled  bool     `yaml:"enabled"`
 	Path     string   `yaml:"path"`
-	Interval Duration `yaml:"interval"`
-	Timeout  Duration `yaml:"timeout"`
 }
 
 type CircuitBreakerConfig struct {
