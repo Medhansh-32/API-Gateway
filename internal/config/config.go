@@ -18,7 +18,7 @@ type Config struct {
 	JWTSecret  string `env:"JWT_SECRET" env-required:"true"`
 }
 
-func Load() (*Config, error) {
+func LoadApplicationConfig() (*Config, error) {
 	var cfg Config
 
 	if err := cleanenv.ReadConfig(".env", &cfg); err != nil {

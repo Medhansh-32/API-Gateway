@@ -25,7 +25,7 @@ func (h *HealthService) CheckTargetsHealth() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	services := h.cfg.Get().Services
+	services := h.cfg.GetGateWayConfig().Services
 
 	for _, service := range services {
 

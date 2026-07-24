@@ -32,14 +32,14 @@ func NewProxyService(Cfg *config.ConfigManager, healthService *HealthService) (P
 func (proxyServiceImpl *ProxyServiceImpl) FindTargetRouteForRequest(request *http.Request) (*models.TargetRoute,error){
 
 	
-	route,err := CheckRouteAndPath(proxyServiceImpl.ConfigManager.Get(),request.URL.Path);
+	route,err := checkRouteAndPath(proxyServiceImpl.ConfigManager.GetGateWayConfig(),request.URL.Path);
 
 	if err != nil{
 		return nil,err
 	}
 
 
-	service , err := getServiceForRoute(proxyServiceImpl.ConfigManager.Get(),route.Path)
+	service , err := getServiceForRoute(proxyServiceImpl.ConfigManager.GetGateWayConfig(),route.Path)
 
 	if err != nil{
 		return nil,err
@@ -56,22 +56,41 @@ func (proxyServiceImpl *ProxyServiceImpl) FindTargetRouteForRequest(request *htt
 	return &models.TargetRoute{Host: target.URL, Path: stripFirstSegment(request.URL.Path) },nil
 }
 
-func CheckRouteAndPath(cfg *models.GatewayConfig, path string) (*models.RouteConfig, error){
-	for _ , route := range cfg.Routes{
-		
-		baseRoute := strings.TrimSuffix(route.Path,"/**")
+func checkRouteAndPath(cfg *models.GatewayConfig, path string) (*models.RouteConfig, error) {
+	var bestMatch *models.RouteConfig
+	longestPrefix := -1
 
-		if getFirstSegment(path) == baseRoute {
-			return &route,nil
+	for _, route := range cfg.Routes {
+
+		// Exact match always wins
+		if !strings.HasSuffix(route.Path, "/**") {
+			if route.Path == path {
+				return &route, nil
+			}
+			continue
 		}
-	} 
 
-	return nil,errors.New("No Routing Config Found for Path : "+path);
+		// Wildcard match
+		base := strings.TrimSuffix(route.Path, "/**")
+
+		if path == base || strings.HasPrefix(path, base+"/") {
+			if len(base) > longestPrefix {
+				bestMatch = &route
+				longestPrefix = len(base)
+			}
+		}
+	}
+
+	if bestMatch != nil {
+		return bestMatch, nil
+	}
+
+	return nil, errors.New("no routing config found for path: "+ path)
 }
 
 func getServiceForRoute(cfg *models.GatewayConfig, path string) (*models.ServiceConfig,error){
 	
-	routeConfig,err := CheckRouteAndPath(cfg,path)
+	routeConfig,err := checkRouteAndPath(cfg,path)
 
 	if err != nil{
 		return nil,err
@@ -100,16 +119,4 @@ func stripFirstSegment(path string) string {
 	}
 
 	return "/" + parts[1]
-}
-
-func getFirstSegment(path string) string {
-	path = strings.TrimPrefix(path, "/")
-
-	parts := strings.SplitN(path, "/", 2)
-
-	if len(parts) == 1 {
-		return "/"
-	}
-	log.Println("Orignal Path : " + "/" + parts[0])
-	return "/" + parts[0]
 }

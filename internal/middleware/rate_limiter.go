@@ -46,7 +46,7 @@ func (R RateLimitMiddleware) RateLimitCheck(next http.Handler) http.Handler {
 			return
 		}
 
-		allowed := R.rlt.rateLimit(clientIP, &(R.cfg.Get().RateLimit))
+		allowed := R.rlt.rateLimit(clientIP, &(R.cfg.GetGateWayConfig().RateLimit))
 
 		if !allowed {
 			w.Header().Set("Content-Type", "application/json")
@@ -64,20 +64,18 @@ func (R RateLimitMiddleware) RateLimitCheck(next http.Handler) http.Handler {
 }
 
 func checkRateLimitingEnabledForURL(url *url.URL, cfgManager *config.ConfigManager) bool {
-	cfg := cfgManager.Get()
-	routes := cfg.Routes
+	cfg := cfgManager.GetGateWayConfig()
 
-	for _, route := range routes {
-
-		if matchURL(url, route.Path) {
-			log.Println("Route Matched : ", route, " Rate Limiting enabled : ", route.RateLimit)
-
-			return route.RateLimit
-		}
-
+	route := getRouteConfigForURL(url, cfg)
+	if route == nil {
+		log.Printf("No Route Found For: %s", url.Path)
+		return false
 	}
-	log.Print("No Route Found For : ", url)
-	return false
+
+	log.Printf("Route Matched: %s, Rate Limiting enabled: %v",
+		route.Path, route.RateLimit)
+
+	return route.RateLimit
 }
 
 func (R *RateLimiter) rateLimit(clientIP string, rateLimit *models.RateLimit) bool {

@@ -19,18 +19,18 @@ import (
 
 type AuthMiddleware struct {
 	authService   *service.AuthenticationService
-	gateWayConfig *config.ConfigManager
+	cfgManager *config.ConfigManager
 }
 
-func NewAuthMiddleWare(authService *service.AuthenticationService, gateWayConfig *config.ConfigManager) AuthMiddleware {
-	return AuthMiddleware{authService: authService, gateWayConfig: gateWayConfig}
+func NewAuthMiddleWare(authService *service.AuthenticationService, cfgManager *config.ConfigManager) AuthMiddleware {
+	return AuthMiddleware{authService: authService, cfgManager: cfgManager}
 }
 
 func (autheMiddleware *AuthMiddleware) Authentication(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		rWithContext, err := autheMiddleware.authenticateRequest(r, autheMiddleware.gateWayConfig)
+		rWithContext, err := autheMiddleware.authenticateRequest(r, autheMiddleware.cfgManager)
 
 		if err != nil {
 			w.Header().Set("Content-type", "application/json")
@@ -51,7 +51,7 @@ func (a AuthMiddleware) authenticateRequest(r *http.Request, cfg *config.ConfigM
 
 	log.Println("Authenticating Request for URL : {}", url, " token ")
 
-	routeConfig := getRouteConfigForURL(url, cfg.Get())
+	routeConfig := getRouteConfigForURL(url, cfg.GetGateWayConfig())
 
 	if routeConfig == nil || routeConfig.Auth.Enabled == false {
 		return r, nil
@@ -93,19 +93,28 @@ func (a AuthMiddleware) authenticateRequest(r *http.Request, cfg *config.ConfigM
 }
 
 func getRouteConfigForURL(url *url.URL, cfg *models.GatewayConfig) *models.RouteConfig {
-	routes := cfg.Routes
+	var best *models.RouteConfig
+	longest := -1
 
-	for _, route := range routes {
-
-		if matchURL(url, route.Path) {
-			log.Println("Route Matched : ", route)
-			return &route
+	for _, route := range cfg.Routes {
+	
+		if !strings.HasSuffix(route.Path, "/**") {
+			if route.Path == url.Path {
+				return &route
+			}
+			continue
 		}
 
+		base := strings.TrimSuffix(route.Path, "/**")
+		if url.Path == base || strings.HasPrefix(url.Path, base+"/") {
+			if len(base) > longest {
+				best = &route
+				longest = len(base)
+			}
+		}
 	}
 
-	return nil
-
+	return best
 }
 
 func matchURL(url *url.URL, pathPattern string) bool {

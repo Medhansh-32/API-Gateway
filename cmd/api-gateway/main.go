@@ -18,7 +18,7 @@ import (
 
 func main() {
 
-	cfg, err := config.Load()
+	cfg, err := config.LoadApplicationConfig()
 	if err != nil {
 		log.Fatal("Error Occured while loading Config " + err.Error())
 	}
@@ -42,23 +42,29 @@ func main() {
 		log.Fatal("Error Making Connection with Database : ",dbError.Error())
 	}
 
-	gatewayCfgManager := &config.ConfigManager{}
+	cfgManager := &config.ConfigManager{}
 	
-	gatewayCfgManager.Update(gatewayCfg)
+	cfgManager.UpdateGateWayConfig(gatewayCfg)
+
 	
-	healthService := service.NewHealthService(gatewayCfgManager)
+	configWatcher := config.NewConfigWatcher(cfgManager)
+
+	go configWatcher.WatchGateWayConfig(cfg.RoutingConfig)
+	go configWatcher.WatchApplicationConfig(".env")
+
+	healthService := service.NewHealthService(cfgManager)
 
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
 	// user,err:=userService.GetUserById(1)
 	jwtService:= service.NewJWTService(cfg.JWTSecret)
 	authService:= service.NewAuthService(userService,jwtService)
-	proxyService:= service.NewProxyService(gatewayCfgManager,healthService)
+	proxyService:= service.NewProxyService(cfgManager,healthService)
 	gateWayHandler := handlers.NewGateWayHandler(proxyService,*authService)
 
 
-	auth := middleware.NewAuthMiddleWare(authService,gatewayCfgManager)
-	rateLimit := middleware.NewRateLimitingMiddleware(gatewayCfgManager)
+	auth := middleware.NewAuthMiddleWare(authService,cfgManager)
+	rateLimit := middleware.NewRateLimitingMiddleware(cfgManager)
 	
 	router := http.DefaultServeMux
 	middlewareRouter := middleware.Logger(auth.Authentication(rateLimit.RateLimitCheck(router)))
